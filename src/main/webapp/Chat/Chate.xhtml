@@ -1,0 +1,137 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ui:composition xmlns="http://www.w3.org/1999/xhtml"
+                xmlns:h="http://java.sun.com/jsf/html"
+                xmlns:f="http://java.sun.com/jsf/core"
+                xmlns:ui="http://java.sun.com/jsf/facelets"
+                xmlns:p="http://primefaces.org/ui">
+
+    <h:form id="form">
+
+        <h:panelGrid columns="2" styleClass="themeRoller" columnClasses="themeText,themeSelect">
+            <h:outputText value="Temas: "/>
+            <p:selectOneMenu id="themeSelectMenu" value="#{userSettings.currentTheme}" var="theme" effect="drop"
+                             onchange="$('#form').submit()"
+                             disabled="#{chatView.loggedIn}">
+                <f:converter converterId="br.com.Chate.Classes.convert.ThemeConverter"/>
+                <f:selectItems var="t"
+                               value="#{userSettings.availableThemes}"
+                               itemLabel="#{t.name}"
+                               itemValue="#{t}"/>
+                <p:column>
+                    <p:graphicImage value="#{theme.image}" rendered="${not empty theme.image}"/>
+                </p:column>
+                <p:column>
+                    #{theme.name}
+                </p:column>
+            </p:selectOneMenu>
+        </h:panelGrid>
+        <br/>
+        <br/>
+        <br/>  
+
+        <p:growl id="growl" showDetail="true" />
+
+        <p:remoteCommand name="updateList" update="users" process="@this" />
+
+        <p:fieldset id="container" legend="PrimeChat" toggleable="true">
+
+            <h:panelGroup rendered="#{chatView.loggedIn}">
+
+                <h:panelGrid columns="2" columnClasses="publicColumn,usersColumn"
+                             style="width: 100%;">
+                    <p:outputPanel id="public" layout="block"
+                                   styleClass="ui-corner-all ui-widget-content chatlogs"
+                                   style="width: 73%;height: 350px;overflow:auto;" />
+
+                    <p:dataList id="users" var="user" value="#{chatUsers.users}"
+                                styleClass="usersList" rows="7" paginator="true"
+                                paginatorAlwaysVisible="false" paginatorPosition="top">
+                        <f:facet name="header">
+                            Users
+                        </f:facet>
+                        <p:column >
+                            <p:commandButton title="Chat" icon="ui-icon-comment"
+                                             oncomplete="PF('pChat').show()"
+                                             update=":form:privateChatContainer">
+                                <f:setPropertyActionListener value="#{user}"
+                                                             target="#{chatView.privateUser}" />
+                            </p:commandButton>
+                            #{user}
+                        </p:column>
+                    </p:dataList>
+                </h:panelGrid>
+
+                <p:separator />
+                <h:panelGroup>
+                    <p:inputText value="#{chatView.globalMessage}"
+                                 styleClass="messageInput"
+                                 onkeypress="return runClickGlobal(event);" />
+                    <p:spacer width="5" />
+                    <p:commandButton value="Send"
+                                     actionListener="#{chatView.sendGlobal}"
+                                     oncomplete="$('.messageInput').val('').focus()" id="sendGlobal" />
+                    <p:spacer width="5" />
+                    <p:commandButton value="Disconnect"
+                                     actionListener="#{chatView.disconnect}" global="false"
+                                     update="container, themeSelectMenu" />
+                </h:panelGroup>
+            </h:panelGroup>
+
+            <h:panelGroup rendered="#{not chatView.loggedIn}">
+                <p:outputLabel value="Username: " for="lgnUsername"/>
+                <p:inputText value="#{chatView.username}" id="lgnUsername"/>
+
+                <p:spacer width="5" />
+                <p:commandButton value="Login" actionListener="#{chatView.login}"
+                                 update="container,themeSelectMenu" icon="ui-icon-person" />
+            </h:panelGroup>
+
+        </p:fieldset>
+
+        <p:dialog widgetVar="pChat" header="Private Chat" modal="true"
+                  showEffect="fade" hideEffect="fade">
+            <h:panelGrid id="privateChatContainer" columns="2"
+                         columnClasses="vtop,vtop">
+                <p:outputLabel for="pChatInput" value="To: #{chatView.privateUser}" />
+                <p:inputTextarea id="pChatInput" value="#{chatView.privateMessage}"
+                                 onkeypress="return runClickPrivat(event);" rows="5" cols="30" />
+
+                <p:spacer />
+                <p:commandButton value="Send"
+                                 actionListener="#{chatView.sendPrivate}"
+                                 oncomplete="PF('pChat').hide()" id="sendPrivat" />
+            </h:panelGrid>
+        </p:dialog>
+    </h:form>
+
+    <p:socket onMessage="handleMessage" channel="/{room}"
+              autoConnect="false" widgetVar='subscriber' id="msgPublic" />
+
+    <script type="text/javascript">
+        function handleMessage(message) {
+            var chatContent = $(PrimeFaces.escapeClientId('form:public')),
+                    text = (message.user) ? message.user + ':' + message.text : message.text;
+            chatContent.append(text + '<br />');
+            //keep scroll
+            chatContent.scrollTop(chatContent.height());
+            if (message.updateList) {
+                updateList();
+            }
+        }
+
+        function runClickGlobal(e) {
+            if (e.keyCode === 13) {
+                document.getElementById("form:sendGlobal").click();
+                return false;
+            }
+        }
+
+        function runClickPrivat(e) {
+            if (e.keyCode === 13) {
+                document.getElementById("form:sendPrivat").click();
+                return false;
+            }
+        }
+    </script>
+
+</ui:composition>

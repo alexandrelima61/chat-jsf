@@ -1,0 +1,11 @@
+br\com\Chate\Classes\Controller\ChatView.class
+br\com\Chate\Classes\convert\ThemeConverter.class
+br\com\Chate\Classes\MessageEncoder.class
+br\com\Chate\Classes\Message.class
+br\com\Chate\Classes\MessageDecoder.class
+br\com\Chate\Classes\webapp\UserSettings.class
+br\com\Chate\Classes\Controller\ChatUsers.class
+br\com\Chate\Classes\model\system\AvailableThemes\AvailableThemes.class
+br\com\Chate\Classes\util\FacesUtil.class
+br\com\Chate\Classes\model\system\AvailableThemes\Theme.class
+br\com\Chate\Classes\Controller\ChatResource.class
